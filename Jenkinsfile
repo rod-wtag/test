@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Check Branch') {
             steps {
-                echo 'hello main'
+                echo 'hello release/21.15'
             }
         }
     }
