@@ -43,9 +43,7 @@ pipeline {
 
                     sh """
                         git checkout $env.GIT_BRANCH
-
-                        git fetch --all
-                        git rebase origin/${env.GIT_BRANCH}
+                        git pull --rebase origin ${env.GIT_BRANCH}
                     """
 
                     def versionFilePath = 'system/config/version.properties'
@@ -83,7 +81,7 @@ pipeline {
 
                             git add ${versionFilePath}
                             git commit -m "bump version ${env.VERSION}"
-                            git pull --rebase origin ${env.GIT_BRANCH}
+                            
                             git push origin HEAD:${env.GIT_BRANCH}
                         """
                     }
