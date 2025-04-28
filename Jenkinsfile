@@ -186,7 +186,20 @@ pipeline {
                 echo "Running Merge Tag for branch: ${env.CURRENT_BRANCH}"
                 withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                     script {
-                        def branchName = "release/${env.MAJOR}.${env.MINOR.toInteger()+1}"
+                        def branchName = "release/${env.MAJOR}.${env.MINOR.toInteger() + 1}"
+
+                        // Check if remote branch exists
+                        def branchExists = sh(
+                            script: "git ls-remote --heads origin ${branchName}",
+                            returnStdout: true
+                        ).trim()
+
+                        if (branchExists == "") {
+                            currentBuild.result = 'ABORTED'
+                            error "Remote branch ${branchName} does not exist. Aborting."
+                        }
+
+                        echo "Remote branch ${branchName} exists. Proceeding."
 
                         sh "git checkout ${branchName}"
 
@@ -212,18 +225,19 @@ pipeline {
                                 sh """
                                     git checkout --ours system/config/version.properties
                                     git add system/config/version.properties
-                                    git commit -m 'Merged ${params.TAG} into ${params.BRANCH} - resolved version.properties conflict by keeping branch version.'
+                                    git commit -m 'Merged ${params.TAG} into ${branchName} - resolved version.properties conflict by keeping branch version.'
                                 """
                             } else {
                                 error("Conflict detected in files other than system/config/version.properties. Aborting.")
                             }
                         } else {
                             echo "Merge successful without conflicts."
-                            sh "git commit -m 'Merged ${params.TAG} into ${params.BRANCH}'"
+                            sh "git commit -m 'Merged ${params.TAG} into ${branchName}'"
                         }
                     }
                 }
             }
         }
+
     }
 }
