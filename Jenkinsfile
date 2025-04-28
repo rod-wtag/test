@@ -47,6 +47,21 @@ pipeline {
             }
         }
 
+        stage('Check Branch') {
+            steps {
+                script {
+                    echo "Current branch: ${env.CURRENT_BRANCH}"
+                    if (!env.CURRENT_BRANCH.contains('release/')) {
+                        echo "Not detected release branch. Stopping pipeline execution."
+                        currentBuild.result = 'ABORTED'
+                        error "Pipeline stopped because it's not running on release branch"
+                    } else {
+                        echo "It's a release branch, continuing with pipeline execution"
+                    }
+                }
+            }
+        }
+
         stage('Create Hello World File') {
             steps {
                 script {
