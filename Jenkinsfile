@@ -210,6 +210,8 @@ pipeline {
                             returnStatus: true
                         )
 
+                        echo "Merge status: ${mergeStatus}"
+
                         if (mergeStatus != 0) {
                             echo "Merge conflict detected."
 
