@@ -43,7 +43,9 @@ pipeline {
 
                     sh """
                         git checkout $env.GIT_BRANCH
-                        git pull origin -f $env.GIT_BRANCH
+
+                        git config pull.rebase true
+                        git pull origin $env.GIT_BRANCH
                     """
 
                     def versionFilePath = 'system/config/version.properties'
