@@ -225,14 +225,17 @@ pipeline {
                                 sh """
                                     git checkout --ours system/config/version.properties
                                     git add system/config/version.properties
-                                    git commit -m 'Merged ${params.TAG} into ${branchName} - resolved version.properties conflict by keeping branch version.'
+                                    git commit -m 'Merged ${env.TAG_NAME} into ${branchName} - resolved version.properties conflict by keeping branch version.'
+                                    git push origin HEAD:${branchName}
                                 """
                             } else {
+                                currentBuild.result = 'ABORTED'
                                 error("Conflict detected in files other than system/config/version.properties. Aborting.")
                             }
                         } else {
                             echo "Merge successful without conflicts."
-                            sh "git commit -m 'Merged ${params.TAG} into ${branchName}'"
+                            sh "git commit -m 'Merged ${env.TAG_NAME} into ${branchName}'"
+                            sh "git push origin HEAD:${branchName}"
                         }
                     }
                 }
