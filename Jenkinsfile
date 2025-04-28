@@ -22,16 +22,16 @@ pipeline {
                 cleanWs()
                 
                 // Fresh checkout
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "${env.GIT_BRANCH}"]],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [[$class: 'CleanBeforeCheckout']],
-                    userRemoteConfigs: [[
-                        credentialsId: "${GIT_CREDENTIALS_ID}",
-                        url: "https://${REPO_URL}"
-                    ]]
-                ])
+                // checkout([
+                //     $class: 'GitSCM',
+                //     branches: [[name: "${env.GIT_BRANCH}"]],
+                //     doGenerateSubmoduleConfigurations: false,
+                //     extensions: [[$class: 'CleanBeforeCheckout']],
+                //     userRemoteConfigs: [[
+                //         credentialsId: "${GIT_CREDENTIALS_ID}",
+                //         url: "https://${REPO_URL}"
+                //     ]]
+                // ])
             }
         }
 
