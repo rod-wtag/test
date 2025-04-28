@@ -192,7 +192,35 @@ pipeline {
                             set -e  # Fail on any error
 
                             if git ls-remote --heads origin "$branchName" | grep -q "$branchName"; then
-                                echo "Remote branch '$branchName' exists"
+                                echo "Branch '$branchName' exists"
+                                # Fetch
+                                git checkout "$branchName"
+
+                                # Try merging the tag
+                                if ! git merge --no-commit --no-ff ${env.TAG_NAME}; then
+                                    echo "Merge conflict detected."
+
+                                    # Find conflicted files
+                                    conflicted_files=$(git diff --name-only --diff-filter=U)
+
+                                    echo "Conflicted files: $conflicted_files"
+
+                                    if [ "$conflicted_files" = "system/config/version.properties" ]; then
+                                        echo "Only system/config/version.properties conflicted. Resolving by keeping branch version."
+                                        
+                                        
+
+                                    else
+                                        echo "Conflict detected in files other than system/config/version.properties. Aborting."
+                                        exit 1
+                                    fi
+                                else
+                                    echo "Merge successful without conflicts."
+                                    # Commit if there was no conflict
+                                    git commit -m "Merged tag your-tag-name into your-branch"
+                                fi
+
+
                             else
                                 echo "Branch '$branchName' does not exist"
                             fi
