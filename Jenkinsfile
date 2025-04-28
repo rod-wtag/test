@@ -83,6 +83,7 @@ pipeline {
 
                             git add ${versionFilePath}
                             git commit -m "bump version ${env.VERSION}"
+                            git pull --rebase ${env.VERSION}
                             git push origin HEAD:${env.GIT_BRANCH}
                         """
                     }
