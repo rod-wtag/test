@@ -1,47 +1,74 @@
 pipeline {
     agent any
 
+    triggers {
+        githubPush()
+    }
+
     environment {
-        GIT_CREDENTIALS_ID = 'github-creds'  // Your GitHub credentials ID
+        GIT_CREDENTIALS_ID = 'github-creds'
+        REPO_URL = 'github.com/rod-wtag/git-flow-automation-jenkins.git'
     }
 
     stages {
-        stage('Checkout Branch') {
+        stage('Checkout') {
             steps {
+                checkout scm
                 script {
-                    echo "Checking out branch: ${env.GIT_BRANCH}"
-                    // Checkout the branch that triggered the pipeline
+                    // Set git config for commits
                     sh """
-                        git checkout ${env.GIT_BRANCH}
+                        git config user.name "rod-wtag"
+                        git config user.email "roky.das@welldev.io"
                     """
+                    
+                    // Store branch name for later use
+                    env.BRANCH_NAME = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    echo "Working on branch: ${env.BRANCH_NAME}"
                 }
             }
         }
 
-        stage('Create File and Commit Changes') {
+        stage('Create Hello World File') {
             steps {
                 script {
-                    echo "Creating a text file with Hello World"
+                    // Create a text file with Hello World
+                    writeFile file: 'hello_world.txt', text: 'Hello World'
+                    echo "Created hello_world.txt file"
+                }
+            }
+        }
 
-                    // Create a new text file with Hello World content
-                    sh """
-                        echo 'Hello World' > hello.txt
-                    """
-
-                    // Stage, commit, and push the changes to the branch
-                    withCredentials([usernamePassword(credentialsId: GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
+        stage('Commit and Push Changes') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                         sh """
-                            git config user.name "rod-wtag"
-                            git config user.email "roky.das@welldev.io"
-                            git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/rod-wtag/git-flow-automation-jenkins.git
-
-                            git add hello.txt
-                            git commit -m "Added hello.txt with Hello World"
-                            git push origin HEAD:${env.GIT_BRANCH}
+                            # Check if there are changes to commit
+                            git add hello_world.txt
+                            
+                            # Commit only if there are changes
+                            git diff --cached --quiet || git commit -m "Add hello_world.txt file"
+                            
+                            # Set the remote URL with credentials
+                            git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL}
+                            
+                            # Push changes back to the same branch
+                            git push origin HEAD:${env.BRANCH_NAME}
+                            
+                            echo "Successfully pushed changes to ${env.BRANCH_NAME}"
                         """
                     }
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed!"
         }
     }
 }
