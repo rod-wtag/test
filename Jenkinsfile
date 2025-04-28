@@ -71,10 +71,12 @@ pipeline {
                         sh """
                             git config user.name "rod-wtag"
                             git config user.email "roky.das@welldev.io"
-
-                            git pull
-
                             git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/rod-wtag/git-flow-automation-jenkins.git
+
+                            git fetch origin
+                            git checkout release/21.25
+                            git pull origin release/21.25
+                            
                             git add ${versionFilePath}
                             git commit -m "bump version ${env.VERSION}"
                             git push origin HEAD:${env.GIT_BRANCH}
