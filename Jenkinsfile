@@ -62,7 +62,7 @@ pipeline {
             }
         }
 
-        stage('Create Hello World File') {
+        stage('Get and update bump version') {
             steps {
                 script {
 
@@ -132,7 +132,7 @@ pipeline {
                             git add ${env.VERSION_FILE_PATH}
                             
                             # Commit
-                            git commit -m "Add hello_world.txt file"
+                            git commit -m "bump version ${env.VERSION}" || echo "No changes to commit"
                             
                             # Push changes
                             git push origin HEAD:${env.CURRENT_BRANCH}
@@ -140,6 +140,19 @@ pipeline {
                             echo "Successfully pushed changes to ${env.CURRENT_BRANCH}"
                         """
                     }
+                }
+            }
+        }
+
+        stage('Tag & Push') {
+            steps {
+                echo "Creating Tag & Push for branch: ${env.CURRENT_BRANCH}"
+                withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
+                    sh """
+                        git tag -d ${env.TAG_NAME} || true
+                        git tag -f ${env.TAG_NAME}
+                        git push https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL} ${env.TAG_NAME}
+                    """
                 }
             }
         }
