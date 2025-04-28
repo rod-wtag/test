@@ -188,54 +188,42 @@ pipeline {
                     script {
                         def branchName = "release/${env.MAJOR}.${env.MINOR.toInteger()+1}"
 
-                        sh """
-                            set -e  # Fail on any error
+                        sh "git checkout ${branchName}"
 
-                            if git ls-remote --heads origin "$branchName" | grep -q "$branchName"; then
-                                echo "Branch '$branchName' exists"
-                                # Fetch
-                                git checkout "$branchName"
+                        // Try merging, allow failure
+                        def mergeStatus = sh(
+                            script: "git merge --no-commit --no-ff ${params.TAG} || true",
+                            returnStatus: true
+                        )
 
-                                # Try merging the tag
-                                if ! git merge --no-commit --no-ff \${env.TAG_NAME}; then
-                                    echo "Merge conflict detected."
+                        if (mergeStatus != 0) {
+                            echo "Merge conflict detected."
 
-                                    # Find conflicted files
-                                    conflicted_files=\$(git diff --name-only --diff-filter=U)
-                                    echo "Conflicted files: \$conflicted_files"
+                            def conflicted_files = sh(
+                                script: "git diff --name-only --diff-filter=U",
+                                returnStdout: true
+                            ).trim()
 
-                                    if [ "$conflicted_files" = "system/config/version.properties" ]; then
-                                        echo "Only system/config/version.properties conflicted. Resolving by keeping branch version."
-                                        
-                                        
+                            echo "Conflicted files: ${conflicted_files}"
 
-                                    else
-                                        echo "Conflict detected in files other than system/config/version.properties. Aborting."
-                                        exit 1
-                                    fi
-                                else
-                                    echo "Merge successful without conflicts."
-                                    # Commit if there was no conflict
-                                    git commit -m "Merged tag your-tag-name into your-branch"
-                                fi
+                            if (conflicted_files == "system/config/version.properties") {
+                                echo "Only system/config/version.properties conflicted. Resolving by keeping branch version."
 
-
-                            else
-                                echo "Branch '$branchName' does not exist"
-                            fi
-                        """
+                                sh """
+                                    git checkout --ours system/config/version.properties
+                                    git add system/config/version.properties
+                                    git commit -m 'Merged ${params.TAG} into ${params.BRANCH} - resolved version.properties conflict by keeping branch version.'
+                                """
+                            } else {
+                                error("Conflict detected in files other than system/config/version.properties. Aborting.")
+                            }
+                        } else {
+                            echo "Merge successful without conflicts."
+                            sh "git commit -m 'Merged ${params.TAG} into ${params.BRANCH}'"
+                        }
                     }
                 }
             }
         }
     }
-
-    // post {
-    //     success {
-    //         echo "Pipeline completed successfully!"
-    //     }
-    //     failure {
-    //         echo "Pipeline failed!"
-    //     }
-    // }
 }
