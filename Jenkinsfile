@@ -200,8 +200,25 @@ pipeline {
                         }
 
                         echo "Remote branch ${branchName} exists. Proceeding."
-                        sh "git fetch origin ${branchName}:${branchName}"
-                        sh "git checkout ${branchName}"
+
+                        // Delete local branch if it exists and create fresh from origin
+                        sh """
+                            # Fetch all from remote
+                            git fetch origin
+                            
+                            # Check if we're in detached HEAD state and save current commit
+                            CURRENT_SHA=\$(git rev-parse HEAD)
+                            
+                            # Delete local branch if it exists (ignoring errors if it doesn't)
+                            git checkout -f \$CURRENT_SHA
+                            git branch -D ${branchName} || true
+                            
+                            # Create fresh branch from origin
+                            git checkout -B ${branchName} origin/${branchName}
+                            
+                            # Verify we're on a clean branch
+                            git status
+                        """
 
                         // Try merging, allow failure
                         def mergeStatus = sh(

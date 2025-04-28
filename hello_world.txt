@@ -1,50 +1,33 @@
-# Try merging the tag
-set +e  # Allow merge conflicts temporarily
+sh "git checkout origin ${branchName}"
 
-git merge ${env.TAG_NAME} -m 'Merge tag ${env.TAG_NAME}'
+                        // Try merging, allow failure
+                        def mergeStatus = sh(
+                            script: "git merge --no-commit --no-ff ${params.TAG} || true",
+                            returnStatus: true
+                        )
 
-merge_exit_code=$?
-set -e  # Back to strict mode
+                        if (mergeStatus != 0) {
+                            echo "Merge conflict detected."
 
-if [ $merge_exit_code -ne 0 ]; then
-    echo "Merge conflicts detected. Checking conflicted files..."
+                            def conflicted_files = sh(
+                                script: "git diff --name-only --diff-filter=U",
+                                returnStdout: true
+                            ).trim()
 
-    conflicted_files=$(git diff --name-only --diff-filter=U)
+                            echo "Conflicted files: ${conflicted_files}"
 
-    # Check if conflicts only happen in system/config/version.properties
-    if echo "$conflicted_files" | grep -qv "^system/config/version.properties$"; then
-        echo "Conflicts found in files other than version.properties. Aborting merge."
-        git merge --abort
-        exit 1
-    else
-        echo "Only version.properties is conflicted. Resolving by keeping existing version."
+                            if (conflicted_files == "system/config/version.properties") {
+                                echo "Only system/config/version.properties conflicted. Resolving by keeping branch version."
 
-        # Checkout our version of the file
-        git checkout --ours system/config/version.properties
-        git add system/config/version.properties
-
-        # Continue merge
-        git commit -m "Resolve version.properties conflict by keeping existing content."
-    fi
-fi
-
-
-
-# Push the merged branch
-CURRENT_BRANCH=$(git branch --show-current)
-git push https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL} HEAD:${CURRENT_BRANCH}
-
-
-
-
-
-
-git branch -D ${branchName}-local || true
-                                git checkout origin/${branchName} -b ${branchName}-local
-
-
-
-
-
-                                git checkout origin/main -B main-local
-                                git checkout -b merge/${env.TAG_NAME}
+                                sh """
+                                    git checkout --ours system/config/version.properties
+                                    git add system/config/version.properties
+                                    git commit -m 'Merged ${params.TAG} into ${params.BRANCH} - resolved version.properties conflict by keeping branch version.'
+                                """
+                            } else {
+                                error("Conflict detected in files other than system/config/version.properties. Aborting.")
+                            }
+                        } else {
+                            echo "Merge successful without conflicts."
+                            sh "git commit -m 'Merged ${params.TAG} into ${params.BRANCH}'"
+                        }
