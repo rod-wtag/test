@@ -207,7 +207,7 @@ pipeline {
 
                             # Try merging the tag
                             set +e  # Allow merge conflicts temporarily
-                            git merge ${env.TAG_NAME} -m "Merge tag ${env.TAG_NAME}"
+                            git merge ${env.TAG_NAME} -m 'Merge tag ${env.TAG_NAME}'
 
                             merge_exit_code=$?
                             set -e  # Back to strict mode
