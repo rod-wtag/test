@@ -204,7 +204,7 @@ pipeline {
                         sh "git fetch origin ${branchName}:${branchName}"
                         sh "git checkout ${branchName}"
 
-                        sh "git merge --no-commit --no-ff ${params.TAG} || true"
+                        sh "git merge --no-commit --no-ff ${env.TAG_NAME} || true"
 
                         // Check for conflicts manually
                         def conflicts = sh(
@@ -244,6 +244,5 @@ pipeline {
                 }
             }
         }
-
     }
 }
