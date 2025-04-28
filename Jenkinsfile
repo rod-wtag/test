@@ -8,6 +8,8 @@ pipeline {
     environment {
         GIT_CREDENTIALS_ID = 'github-creds'
         REPO_URL = 'github.com/rod-wtag/test.git'
+        USER_NAME = 'rod-wtag'
+        USER_EMAIL = 'roky.das@welldev.io'
     }
 
     stages {
@@ -17,8 +19,8 @@ pipeline {
                 script {
                     // Set git config for commits
                     sh """
-                        git config user.name "rod-wtag"
-                        git config user.email "roky.das@welldev.io"
+                        git config user.name ${env.USER_NAME}
+                        git config user.email ${env.USER_EMAIL}
                     """
                     
                     // Store correct branch name from GIT_BRANCH environment variable
@@ -57,6 +59,28 @@ pipeline {
                         error "Pipeline stopped because it's not running on release branch"
                     } else {
                         echo "It's a release branch, continuing with pipeline execution"
+                    }
+                }
+            }
+        }
+
+        stage('Check Commit Message') {
+            steps {
+                script {
+                    // Get latest commit message
+                    def commitMessage = sh(
+                        script: "git log -1 --pretty=%B",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Latest Commit Message: '${commitMessage}'"
+
+                    if (commitMessage.toLowerCase().contains('bump version')) {
+                        echo "Commit contains 'bump version'. Aborting pipeline."
+                        // Use 'error' to fail and abort the pipeline
+
+                        currentBuild.result = 'ABORTED'
+                        error("Pipeline aborted due to 'bump version' commit.")
                     }
                 }
             }
