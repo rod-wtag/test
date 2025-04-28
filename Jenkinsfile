@@ -41,12 +41,9 @@ pipeline {
             steps {
                 script {
 
-                    // sh """
-                    //     git checkout $env.GIT_BRANCH
-
-                    //     git config pull.rebase true
-                    //     git pull origin $env.GIT_BRANCH
-                    // """
+                    sh """
+                        git checkout $env.GIT_BRANCH
+                    """
 
                     def versionFilePath = 'system/config/version.properties'
                     def versionFileContent = readFile(versionFilePath).trim()
@@ -81,7 +78,6 @@ pipeline {
                             git config user.email "roky.das@welldev.io"
                             git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/rod-wtag/git-flow-automation-jenkins.git
 
-                            git checkout ${env.GIT_BRANCH}
                             git fetch --all
                             git rebase origin/${env.GIT_BRANCH}
 
