@@ -40,9 +40,8 @@ pipeline {
         stage('Get and update bump version') {
             steps {
                 script {
-
+                    // Ensure we are on the correct branch and pull with rebase to avoid conflicts
                     sh """
-                        rm -fr ".git/rebase-merge"
                         git checkout ${env.GIT_BRANCH}
                         git pull --rebase origin ${env.GIT_BRANCH}
                     """
@@ -73,7 +72,7 @@ pipeline {
                     def updatedContent = "version: ${newVersion}"
                     writeFile(file: versionFilePath, text: updatedContent)
 
-                    // Git commit and push
+                    // Commit changes and push
                     withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                         sh """
                             git config user.name "rod-wtag"
@@ -81,8 +80,9 @@ pipeline {
                             git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/rod-wtag/git-flow-automation-jenkins.git
 
                             git add ${versionFilePath}
-                            git commit -m "bump version ${env.VERSION}"
-                            
+                            git commit -m "bump version ${env.VERSION}" || echo "No changes to commit"
+
+                            # Push changes
                             git push origin HEAD:${env.GIT_BRANCH}
                         """
                     }
