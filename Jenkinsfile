@@ -7,36 +7,13 @@ pipeline {
 
     environment {
         GIT_CREDENTIALS_ID = 'github-creds'
-        REPO_URL = 'github.com/rod-wtag/test.git'  // Updated to match your actual repo
-    }
-
-    options {
-        // Clean workspace before each build
-        skipDefaultCheckout(true)
+        REPO_URL = 'github.com/rod-wtag/test.git'
     }
 
     stages {
-        stage('Clean Workspace') {
+        stage('Checkout and Refresh Branch') {
             steps {
-                // Clean workspace completely
-                cleanWs()
-                
-                // Fresh checkout
-                // checkout([
-                //     $class: 'GitSCM',
-                //     branches: [[name: "${env.GIT_BRANCH}"]],
-                //     doGenerateSubmoduleConfigurations: false,
-                //     extensions: [[$class: 'CleanBeforeCheckout']],
-                //     userRemoteConfigs: [[
-                //         credentialsId: "${GIT_CREDENTIALS_ID}",
-                //         url: "https://${REPO_URL}"
-                //     ]]
-                // ])
-            }
-        }
-
-        stage('Configure Git') {
-            steps {
+                checkout scm
                 script {
                     // Set git config for commits
                     sh """
@@ -47,6 +24,25 @@ pipeline {
                     // Store correct branch name from GIT_BRANCH environment variable
                     env.CURRENT_BRANCH = env.GIT_BRANCH.replaceAll('origin/', '')
                     echo "Working on branch: ${env.CURRENT_BRANCH}"
+                    
+                    // Delete local branch if it exists and create fresh from origin
+                    sh """
+                        # Fetch all from remote
+                        git fetch origin
+                        
+                        # Check if we're in detached HEAD state and save current commit
+                        CURRENT_SHA=\$(git rev-parse HEAD)
+                        
+                        # Delete local branch if it exists (ignoring errors if it doesn't)
+                        git checkout -f \$CURRENT_SHA
+                        git branch -D ${env.CURRENT_BRANCH} || true
+                        
+                        # Create fresh branch from origin
+                        git checkout -B ${env.CURRENT_BRANCH} origin/${env.CURRENT_BRANCH}
+                        
+                        # Verify we're on a clean branch
+                        git status
+                    """
                 }
             }
         }
@@ -75,8 +71,8 @@ pipeline {
                             # Commit
                             git commit -m "Add hello_world.txt file"
                             
-                            # Force push to overwrite any history
-                            git push --force origin HEAD:${env.CURRENT_BRANCH}
+                            # Push changes
+                            git push origin HEAD:${env.CURRENT_BRANCH}
                             
                             echo "Successfully pushed changes to ${env.CURRENT_BRANCH}"
                         """
@@ -92,10 +88,6 @@ pipeline {
         }
         failure {
             echo "Pipeline failed!"
-        }
-        always {
-            // Clean up workspace after build
-            cleanWs()
         }
     }
 }
