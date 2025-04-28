@@ -40,6 +40,13 @@ pipeline {
         stage('Get and update bump version') {
             steps {
                 script {
+
+                    sh '''
+                        git fetch origin
+                        git checkout ${env.GIT_BRANCH}
+                        git pull origin ${env.GIT_BRANCH}
+                    '''
+
                     def versionFilePath = 'system/config/version.properties'
                     def versionFileContent = readFile(versionFilePath).trim()
 
@@ -73,10 +80,8 @@ pipeline {
                             git config user.email "roky.das@welldev.io"
                             git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/rod-wtag/git-flow-automation-jenkins.git
 
-                            git fetch origin
-                            git checkout release/21.25
-                            git pull origin release/21.25
                             
+
                             git add ${versionFilePath}
                             git commit -m "bump version ${env.VERSION}"
                             git push origin HEAD:${env.GIT_BRANCH}
