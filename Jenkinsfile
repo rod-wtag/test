@@ -42,8 +42,8 @@ pipeline {
                 script {
 
                     sh '''
-                        git checkout ${env.GIT_BRANCH}
-                        git pull origin ${env.GIT_BRANCH}
+                        git checkout $env.GIT_BRANCH
+                        git pull origin $env.GIT_BRANCH
                     '''
 
                     def versionFilePath = 'system/config/version.properties'
