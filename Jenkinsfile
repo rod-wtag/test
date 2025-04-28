@@ -205,7 +205,7 @@ pipeline {
 
                         // Try merging, allow failure
                         def mergeStatus = sh(
-                            script: "git merge --no-commit --no-ff ${params.TAG} || true",
+                            script: "git merge --no-commit --no-ff ${env.TAG_NAME} || true",
                             returnStatus: true
                         )
 
