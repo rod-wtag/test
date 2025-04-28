@@ -28,6 +28,8 @@ if [ $merge_exit_code -ne 0 ]; then
     fi
 fi
 
+
+
 # Push the merged branch
 CURRENT_BRANCH=$(git branch --show-current)
 git push https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL} HEAD:${CURRENT_BRANCH}
