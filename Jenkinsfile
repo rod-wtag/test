@@ -11,7 +11,7 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout and Configure Git') {
             steps {
                 checkout scm
                 script {
@@ -21,9 +21,15 @@ pipeline {
                         git config user.email "roky.das@welldev.io"
                     """
                     
-                    // Store branch name for later use
-                    env.GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
-                    echo "Working on branch: ${env.GIT_BRANCH}"
+                    // Store correct branch name from GIT_BRANCH environment variable
+                    env.CURRENT_BRANCH = env.GIT_BRANCH.replaceAll('origin/', '')
+                    echo "Working on branch: ${env.CURRENT_BRANCH}"
+                    
+                    // Explicitly checkout the branch to avoid detached HEAD
+                    sh """
+                        git checkout ${env.CURRENT_BRANCH}
+                        git pull origin ${env.CURRENT_BRANCH} --rebase
+                    """
                 }
             }
         }
@@ -43,19 +49,22 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                         sh """
+                            # Set the remote URL with credentials
+                            git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL}
+                            
                             # Check if there are changes to commit
                             git add hello_world.txt
                             
                             # Commit only if there are changes
                             git diff --cached --quiet || git commit -m "Add hello_world.txt file"
                             
-                            # Set the remote URL with credentials
-                            git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL}
+                            # Pull any new changes with rebase to avoid merge commits
+                            git pull --rebase origin ${env.CURRENT_BRANCH}
                             
                             # Push changes back to the same branch
-                            git push origin HEAD:${env.GIT_BRANCH}
+                            git push origin HEAD:${env.CURRENT_BRANCH}
                             
-                            echo "Successfully pushed changes to ${env.GIT_BRANCH}"
+                            echo "Successfully pushed changes to ${env.CURRENT_BRANCH}"
                         """
                     }
                 }
