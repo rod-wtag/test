@@ -51,7 +51,7 @@ pipeline {
             steps {
                 script {
                     // Create a text file with Hello World
-                    writeFile file: 'hello_world.txt', text: 'Hello World'
+                    writeFile file: 'hello_world1.txt', text: 'Hello World'
                     echo "Created hello_world.txt file"
                 }
             }
@@ -66,7 +66,7 @@ pipeline {
                             git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL}
                             
                             # Add the file
-                            git add hello_world.txt
+                            git add hello_world1.txt
                             
                             # Commit
                             git commit -m "Add hello_world.txt file"
