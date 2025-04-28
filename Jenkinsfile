@@ -204,13 +204,15 @@ pipeline {
                         sh "git fetch origin ${branchName}:${branchName}"
                         sh "git checkout ${branchName}"
 
-                        // Try merging, allow failure
-                        def mergeStatus = sh(
-                            script: "git merge --no-commit --no-ff ${env.TAG_NAME} || true",
-                            returnStatus: true
-                        )
+                        sh "git merge --no-commit --no-ff ${env.TAG_NAME} || true"
 
-                        if (mergeStatus != 0) {
+                        // Check for conflicts manually
+                        def conflicts = sh(
+                            script: "git ls-files -u",
+                            returnStdout: true
+                        ).trim()
+
+                        if (conflicts) {
                             echo "Merge conflict detected."
 
                             def conflicted_files = sh(
@@ -242,6 +244,5 @@ pipeline {
                 }
             }
         }
-
     }
 }
