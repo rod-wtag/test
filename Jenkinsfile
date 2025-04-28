@@ -203,7 +203,7 @@ pipeline {
                                     # Find conflicted files
                                     conflicted_files=$(git diff --name-only --diff-filter=U)
 
-                                    echo "Conflicted files: $conflicted_files"
+                                    echo "Conflicted files: \$conflicted_files"
 
                                     if [ "$conflicted_files" = "system/config/version.properties" ]; then
                                         echo "Only system/config/version.properties conflicted. Resolving by keeping branch version."
