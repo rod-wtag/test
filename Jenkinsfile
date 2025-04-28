@@ -191,17 +191,10 @@ pipeline {
                         sh """
                             set -e  # Fail on any error
 
-                            git fetch --all
-
-                            if git rev-parse --verify "$branchName" >/dev/null 2>&1; then
-                                echo "Local branch '$branchName' exists"
+                            if git ls-remote --heads origin "$branchName" | grep -q "$branchName"; then
+                                echo "Remote branch '$branchName' exists"
                             else
-                                # Check if branch exists remotely
-                                if git ls-remote --heads origin "$branchName" | grep -q "$branchName"; then
-                                    echo "Remote branch '$branchName' exists"
-                                else
-                                    echo "Branch '$branchName' does not exist"
-                                fi
+                                echo "Branch '$branchName' does not exist"
                             fi
                         """
                     }
