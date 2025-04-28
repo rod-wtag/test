@@ -186,31 +186,62 @@ pipeline {
                 echo "Running Merge Tag for branch: ${env.CURRENT_BRANCH}"
                 withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                     script {
-                        def branchName = "release/${env.MAJOR}.${env.MINOR.toInteger()+1}"
+                        def branchName = "release/${env.MAJOR}.${env.MINOR.toInteger() + 1}"
 
-                        sh """
-                            set -e  # Fail on any error
+                        // Check if remote branch exists
+                        def branchExists = sh(
+                            script: "git ls-remote --heads origin ${branchName}",
+                            returnStdout: true
+                        ).trim()
 
-                            git fetch --all
+                        if (branchExists == "") {
+                            currentBuild.result = 'ABORTED'
+                            error "Remote branch ${branchName} does not exist. Aborting."
+                        }
 
-                            if git show-ref --verify --quiet refs/heads/${branchName}; then
-                                echo "Branch '${branchName}' exists. Proceeding to merge."
-                            else
-                                echo "Branch '${branchName}' does not exist. Creating merge branch instead."
-                            fi
-                        """
+                        echo "Remote branch ${branchName} exists. Proceeding."
+
+                        sh "git fetch origin ${branchName}:${branchName}"
+                        sh "git checkout ${branchName}"
+
+                        // Try merging, allow failure
+                        def mergeStatus = sh(
+                            script: "git merge --no-commit --no-ff ${env.TAG_NAME} || true",
+                            returnStatus: true
+                        )
+
+                        if (mergeStatus != 0) {
+                            echo "Merge conflict detected."
+
+                            def conflicted_files = sh(
+                                script: "git diff --name-only --diff-filter=U",
+                                returnStdout: true
+                            ).trim()
+
+                            echo "Conflicted files: ${conflicted_files}"
+
+                            if (conflicted_files == "system/config/version.properties") {
+                                echo "Only system/config/version.properties conflicted. Resolving by keeping branch version."
+
+                                sh """
+                                    git checkout --ours system/config/version.properties
+                                    git add system/config/version.properties
+                                    git commit -m 'Merged ${env.TAG_NAME} into ${branchName} - resolved version.properties conflict by keeping branch version.'
+                                    git push origin HEAD:${branchName}
+                                """
+                            } else {
+                                currentBuild.result = 'ABORTED'
+                                error("Conflict detected in files other than system/config/version.properties. Aborting.")
+                            }
+                        } else {
+                            echo "Merge successful without conflicts."
+                            sh "git commit -m 'Merged ${env.TAG_NAME} into ${branchName}'"
+                            sh "git push origin HEAD:${branchName}"
+                        }
                     }
                 }
             }
         }
-    }
 
-    post {
-        success {
-            echo "Pipeline completed successfully!"
-        }
-        failure {
-            echo "Pipeline failed!"
-        }
     }
 }
