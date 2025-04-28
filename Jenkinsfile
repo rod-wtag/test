@@ -213,11 +213,8 @@ pipeline {
                             git checkout -f \$CURRENT_SHA
                             git branch -D ${branchName} || true
                             
-                            # Create fresh branch from origin
-                            git checkout -B ${branchName} origin/${branchName}
-                            
-                            # Verify we're on a clean branch
-                            git status
+                            sh "git fetch origin ${branchName}:${branchName}"
+                            sh "git checkout ${branchName}"
                         """
 
                         // Try merging, allow failure
