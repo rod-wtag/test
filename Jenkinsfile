@@ -200,7 +200,7 @@ pipeline {
                         }
 
                         echo "Remote branch ${branchName} exists. Proceeding."
-
+                        sh "git fetch origin ${branchName}:${branchName}"
                         sh "git checkout ${branchName}"
 
                         // Try merging, allow failure
