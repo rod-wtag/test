@@ -186,7 +186,7 @@ pipeline {
                 echo "Running Merge Tag for branch: ${env.CURRENT_BRANCH}"
                 withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                     script {
-                        def branchName = "release/${env.MAJOR}.${env.MINOR+1}"
+                        def branchName = "release/${env.MAJOR}.${env.MINOR.toInteger()+1}"
 
                         sh """
                             set -e  # Fail on any error
