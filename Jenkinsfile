@@ -22,8 +22,8 @@ pipeline {
                     """
                     
                     // Store branch name for later use
-                    env.BRANCH_NAME = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
-                    echo "Working on branch: ${env.BRANCH_NAME}"
+                    env.GIT_BRANCH = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    echo "Working on branch: ${env.GIT_BRANCH}"
                 }
             }
         }
@@ -53,9 +53,9 @@ pipeline {
                             git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL}
                             
                             # Push changes back to the same branch
-                            git push origin HEAD:${env.BRANCH_NAME}
+                            git push origin HEAD:${env.GIT_BRANCH}
                             
-                            echo "Successfully pushed changes to ${env.BRANCH_NAME}"
+                            echo "Successfully pushed changes to ${env.GIT_BRANCH}"
                         """
                     }
                 }
