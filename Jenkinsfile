@@ -42,7 +42,7 @@ pipeline {
                 script {
 
                     sh """
-                        git checkout $env.GIT_BRANCH
+                        git checkout ${env.GIT_BRANCH}
                         git pull --rebase origin ${env.GIT_BRANCH}
                     """
 
