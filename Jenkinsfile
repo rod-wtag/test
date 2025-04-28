@@ -42,6 +42,7 @@ pipeline {
                 script {
 
                     sh """
+                        rm -fr ".git/rebase-merge"
                         git checkout ${env.GIT_BRANCH}
                         git pull --rebase origin ${env.GIT_BRANCH}
                     """
