@@ -197,7 +197,7 @@ pipeline {
                                 git checkout "$branchName"
 
                                 # Try merging the tag
-                                if ! git merge --no-commit --no-ff $env.TAG_NAME; then
+                                if ! git merge --no-commit --no-ff \${env.TAG_NAME}; then
                                     echo "Merge conflict detected."
 
                                     # Find conflicted files
