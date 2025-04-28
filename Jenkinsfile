@@ -42,7 +42,6 @@ pipeline {
                 script {
 
                     sh '''
-                        git fetch origin
                         git checkout ${env.GIT_BRANCH}
                         git pull origin ${env.GIT_BRANCH}
                     '''
