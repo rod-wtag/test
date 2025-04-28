@@ -60,7 +60,7 @@ pipeline {
                     env.MINOR = minor
                     env.VERSION = newVersion
                     env.TAG_NAME = "r${major}.${minor}.${patch}"
-                    echo "Bumped version: ${env.VERSION}"
+                    echo "Bump version: ${env.VERSION}"
 
                     // Replace the version line
                     def updatedContent = "version: ${newVersion}"
@@ -74,7 +74,7 @@ pipeline {
                             git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/rod-wtag/git-flow-automation-jenkins.git
                             git add ${versionFilePath}
                             git commit -m "bump version ${env.VERSION}"
-                            git push origin HEAD:main
+                            git push origin HEAD:${env.GIT_BRANCH}
                         """
                     }
                 }
@@ -105,7 +105,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                     script {
                         def branchName = "release/${env.MAJOR}.${env.MINOR}"
-                        
+
                         sh '''
                             set -e  # Fail on any error
 
