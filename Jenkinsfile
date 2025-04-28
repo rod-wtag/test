@@ -201,8 +201,7 @@ pipeline {
                                     echo "Merge conflict detected."
 
                                     # Find conflicted files
-                                    conflicted_files=$(git diff --name-only --diff-filter=U)
-
+                                    conflicted_files=\$(git diff --name-only --diff-filter=U)
                                     echo "Conflicted files: \$conflicted_files"
 
                                     if [ "$conflicted_files" = "system/config/version.properties" ]; then
