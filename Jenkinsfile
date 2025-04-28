@@ -7,13 +7,36 @@ pipeline {
 
     environment {
         GIT_CREDENTIALS_ID = 'github-creds'
-        REPO_URL = 'github.com/rod-wtag/git-flow-automation-jenkins.git'
+        REPO_URL = 'github.com/rod-wtag/test.git'  // Updated to match your actual repo
+    }
+
+    options {
+        // Clean workspace before each build
+        skipDefaultCheckout(true)
     }
 
     stages {
-        stage('Checkout and Configure Git') {
+        stage('Clean Workspace') {
             steps {
-                checkout scm
+                // Clean workspace completely
+                cleanWs()
+                
+                // Fresh checkout
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "${env.GIT_BRANCH}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [[$class: 'CleanBeforeCheckout']],
+                    userRemoteConfigs: [[
+                        credentialsId: "${GIT_CREDENTIALS_ID}",
+                        url: "https://${REPO_URL}"
+                    ]]
+                ])
+            }
+        }
+
+        stage('Configure Git') {
+            steps {
                 script {
                     // Set git config for commits
                     sh """
@@ -24,12 +47,6 @@ pipeline {
                     // Store correct branch name from GIT_BRANCH environment variable
                     env.CURRENT_BRANCH = env.GIT_BRANCH.replaceAll('origin/', '')
                     echo "Working on branch: ${env.CURRENT_BRANCH}"
-                    
-                    // Explicitly checkout the branch to avoid detached HEAD
-                    sh """
-                        git checkout ${env.CURRENT_BRANCH}
-                        git pull origin ${env.CURRENT_BRANCH} --rebase
-                    """
                 }
             }
         }
@@ -52,17 +69,14 @@ pipeline {
                             # Set the remote URL with credentials
                             git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@${REPO_URL}
                             
-                            # Check if there are changes to commit
+                            # Add the file
                             git add hello_world.txt
                             
-                            # Commit only if there are changes
-                            git diff --cached --quiet || git commit -m "Add hello_world.txt file"
+                            # Commit
+                            git commit -m "Add hello_world.txt file"
                             
-                            # Pull any new changes with rebase to avoid merge commits
-                            git pull --rebase origin ${env.CURRENT_BRANCH}
-                            
-                            # Push changes back to the same branch
-                            git push origin HEAD:${env.CURRENT_BRANCH}
+                            # Force push to overwrite any history
+                            git push --force origin HEAD:${env.CURRENT_BRANCH}
                             
                             echo "Successfully pushed changes to ${env.CURRENT_BRANCH}"
                         """
@@ -78,6 +92,10 @@ pipeline {
         }
         failure {
             echo "Pipeline failed!"
+        }
+        always {
+            // Clean up workspace after build
+            cleanWs()
         }
     }
 }
