@@ -193,10 +193,15 @@ pipeline {
 
                             git fetch --all
 
-                            if git show-ref --verify --quiet refs/heads/${branchName}; then
-                                echo "Branch '${branchName}' exists. Proceeding to merge."
+                            if git rev-parse --verify "$branchName" >/dev/null 2>&1; then
+                                echo "Local branch '$branchName' exists"
                             else
-                                echo "Branch '${branchName}' does not exist. Creating merge branch instead."
+                                # Check if branch exists remotely
+                                if git ls-remote --heads origin "$branchName" | grep -q "$branchName"; then
+                                    echo "Remote branch '$branchName' exists"
+                                else
+                                    echo "Branch '$branchName' does not exist"
+                                fi
                             fi
                         """
                     }
